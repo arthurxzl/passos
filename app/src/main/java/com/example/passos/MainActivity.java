@@ -6,13 +6,10 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.TextView;
 
-import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 
 public class MainActivity extends AppCompatActivity implements SensorEventListener {
 
@@ -24,57 +21,53 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        EdgeToEdge.enable(this);
-        tvTotalPassos = (TextView) findViewById(R.id.tvTotalPassos);
         setContentView(R.layout.activity_main);
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-            return insets;
 
-            mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+        tvTotalPassos = findViewById(R.id.tvTotalPassos);
+
+        // Inicializar o sensor
+        iniciarSensor();
+    }
+
+    private void iniciarSensor() {
+        mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+
+        if (mSensorManager != null) {
             mStepDetectorSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_STEP_DETECTOR);
-        });
+
+            if (mStepDetectorSensor == null) {
+                tvTotalPassos.setText("Sensor de passos não disponível.");
+            }
+        }
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        mSensorManager.registerListener(this, mStepDetectorSensor, SensorManager.SENSOR_DELAY_NORMAL);
-
-
+        if (mStepDetectorSensor != null) {
+            mSensorManager.registerListener(this, mStepDetectorSensor, SensorManager.SENSOR_DELAY_NORMAL);
+        }
     }
 
     @Override
-    protected void onStop() {
-        super.onStop();
-        mSensorManager.unregisterListener(this, mStepDetectorSensor);
-
-
+    protected void onPause() {
+        super.onPause();
+        if (mSensorManager != null) {
+            mSensorManager.unregisterListener(this);
+        }
     }
 
     @Override
     public void onSensorChanged(SensorEvent event) {
-        Sensor sensor = event.sensor;
-        if(sensor.getType() == Sensor.TYPE_STEP_DETECTOR) {
-            // detecção de passos
+        if (event.sensor.getType() == Sensor.TYPE_STEP_DETECTOR) {
             totalPassos++;
-            tvTotalPassos.setText(""+totalPassos);
+            tvTotalPassos.setText("Passos: " + totalPassos);
+            Log.d("StepDetector", "Passos detectados: " + totalPassos);
         }
-        if(sensor.getType() == Sensor.TYPE_STEP_COUNTER) {
-            // alteração na contagem de passos
-
-
-        }
-    }
-
-    @Override
-    public void onSensorChanged(SensorEvent event) {
-
     }
 
     @Override
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
-
+        // Não utilizado
     }
 }
